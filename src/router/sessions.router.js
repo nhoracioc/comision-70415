@@ -1,61 +1,41 @@
 import { Router } from "express";
 const router = Router(); 
-import UserModel from "../models/user.model.js";
 
-//Ruta para nuevo usuario: 
+//Registro usando Passport
 
-router.post("/register", async (req, res) => {
-    const {first_name, last_name, email, password, age} = req.body; 
-    
-    try {
-        //Ver si el correo electronico ya existe: 
-        const existeUsuario = await UserModel.findOne({email: email}); 
+import passport from "passport";
 
-        if(existeUsuario) {
-            return res.status(400).send("El email ya registrado."); 
-        }
+router.post("/register", passport.authenticate("register", {failureRedirect:"/api/sessions/failedregister"}), async (req, res) => {
+   res.redirect("/login"); 
+})
 
-        //Crear nuevo usuario: 
-        const nuevoUsuario = await UserModel.create({first_name, last_name, email, password, age}); 
-
-        res.redirect("/login"); 
-    } catch (error) {
-        console.log(error);
-        res.send("Error al registrar un nuevo usuario"); 
-    }
+router.get("/failedregister", (req, res) => {
+    res.send("Error al registrarse"); 
 })
 
 
-//Ruta para el login: 
-router.post("/login", async (req, res) => {
-    const {email, password} = req.body; 
+//Login con Passport 
 
-    try {
-        const usuario = await UserModel.findOne({email: email}); 
-        if(usuario) {
-            if(usuario.password === password) {
-                req.session.user = {
-                    email: usuario.email, 
-                    age: usuario.age, 
-                    first_name: usuario.first_name, 
-                    last_name: usuario.last_name
-                }
-
-                res.redirect("/profile"); 
-            } else {
-                res.send("Contraseña invalida"); 
-            }
-
-        } else {
-            res.status(404).send("No Existe el Usuario"); 
-        }
-        
-    } catch (error) {
-        
+router.post("/login", passport.authenticate("login", {failureRedirect:"/api/sessions/faillogin"}), async (req, res) => {
+    //creamos la session: 
+    req.session.user = {
+        first_name: req.user.first_name, 
+        last_name: req.user.last_name, 
+        age: req.user.age, 
+        email: req.user.email
     }
+
+    res.redirect("/profile"); 
+
 })
+
+router.get("/faillogin", (req, res) => {
+    res.send("Fallo el login."); 
+})
+
 
 //Logout: 
+
 router.get("/logout", (req, res) => {
     if(req.session.user) {
         req.session.destroy(); 

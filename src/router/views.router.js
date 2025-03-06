@@ -16,7 +16,7 @@ router.get("/register", (req, res) => {
 })
 
 router.get("/profile", (req, res) => {
-    //Ver si el usuario esta logueado: 
+    //Verifico si el usuario esta logueado: 
     if(!req.session.user) {
         return res.redirect("/login");
     }
